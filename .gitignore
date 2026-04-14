@@ -1,0 +1,25 @@
+# Delphi 빌드 산출물
+*.exe
+*.dll
+*.bpl
+*.dcp
+*.dcu
+*.obj
+*.res
+*.rsm
+*.map
+*.drc
+
+# Delphi 프로젝트 파일
+*.dproj.local
+*.identcache
+*.local
+*.stat
+__history/
+__recovery/
+
+# IDE 설정
+*.dsk
+
+# 기타
+.claude/
