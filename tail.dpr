@@ -89,15 +89,64 @@ begin
 end;
 
 function GetLastNLines(const AFileName: string; N: Integer): TArray<string>;
+const
+  BUFFER_SIZE = 4096;
 var
-  AllLines: TArray<string>;
-  StartIndex: Integer;
+  FileStream: TFileStream;
+  FileSize, ReadPos: Int64;
+  Buffer: TBytes;
+  BytesRead: Integer;
+  Content: string;
+  Lines: TStringList;
+  LineCount, StartIndex, I: Integer;
 begin
-  AllLines := TFile.ReadAllLines(AFileName, TEncoding.UTF8);
-  StartIndex := Length(AllLines) - N;
-  if StartIndex < 0 then
-    StartIndex := 0;
-  Result := Copy(AllLines, StartIndex, Length(AllLines) - StartIndex);
+  Result := nil;
+  FileStream := TFileStream.Create(AFileName, fmOpenRead or fmShareDenyNone);
+  try
+    FileSize := FileStream.Size;
+    if FileSize = 0 then
+      Exit;
+
+    Content := '';
+    ReadPos := FileSize;
+    LineCount := 0;
+
+    // 파일 끝에서부터 역방향으로 읽기
+    while (ReadPos > 0) and (LineCount <= N) do
+    begin
+      BytesRead := BUFFER_SIZE;
+      if ReadPos < BytesRead then
+        BytesRead := ReadPos;
+      ReadPos := ReadPos - BytesRead;
+      FileStream.Position := ReadPos;
+
+      SetLength(Buffer, BytesRead);
+      FileStream.ReadBuffer(Buffer, BytesRead);
+      Content := TEncoding.UTF8.GetString(Buffer) + Content;
+
+      // 줄바꿈 개수 카운트
+      LineCount := 0;
+      for I := 1 to Length(Content) do
+        if Content[I] = #10 then
+          Inc(LineCount);
+    end;
+
+    // 문자열을 줄로 분리하여 마지막 N줄 반환
+    Lines := TStringList.Create;
+    try
+      Lines.Text := Content;
+      StartIndex := Lines.Count - N;
+      if StartIndex < 0 then
+        StartIndex := 0;
+      SetLength(Result, Lines.Count - StartIndex);
+      for I := StartIndex to Lines.Count - 1 do
+        Result[I - StartIndex] := Lines[I];
+    finally
+      Lines.Free;
+    end;
+  finally
+    FileStream.Free;
+  end;
 end;
 
 procedure ShowInitialContent;
