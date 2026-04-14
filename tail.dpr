@@ -91,12 +91,19 @@ end;
 function GetLastNLines(const AFileName: string; N: Integer): TArray<string>;
 var
   Lines: TStringList;
+  FileStream: TFileStream;
   StartIndex: Integer;
   I: Integer;
 begin
   Lines := TStringList.Create;
   try
-    Lines.LoadFromFile(AFileName);
+    FileStream := TFileStream.Create(AFileName, fmOpenRead or fmShareDenyNone);
+    try
+      Lines.LoadFromStream(FileStream);
+    finally
+      FileStream.Free;
+    end;
+
     StartIndex := Lines.Count - N;
     if StartIndex < 0 then
       StartIndex := 0;
